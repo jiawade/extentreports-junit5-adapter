@@ -41,7 +41,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
-        <extentreports-version>4.1.4</extentreports-version>
+        <extentreports-version>5.0.9</extentreports-version>
         <junit5-version>5.9.2</junit5-version>
     </properties>
 

@@ -10,7 +10,7 @@ extentreports-junit5-adapter is an adapter which is extent report generator
 <dependency>
     <groupId>io.github.jiawade</groupId>
     <artifactId>extentreports-junit5-adapter</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 </dependency>
 ````
 
@@ -26,7 +26,24 @@ compile 'io.github.jiawade:extentreports-junit5-adapter:0.0.1'
 
 
 ## Usage Example
-mvn clean test
+add following plugin:
+````
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <version>2.22.2</version>
+    <configuration>
+        <includes>
+            <include>**/*.java</include>
+        </includes>
+    </configuration>
+</plugin>
+<plugin>
+    <artifactId>maven-failsafe-plugin</artifactId>
+    <version>2.22.2</version>
+</plugin>
+````
+and then: mvn clean test
 
 or
 ````java

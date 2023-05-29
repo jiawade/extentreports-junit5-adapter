@@ -3,12 +3,16 @@ package io.github.adapter;
 import com.aventstack.extentreports.ExtentReports;
 import com.aventstack.extentreports.ExtentTest;
 import com.aventstack.extentreports.Status;
-import com.aventstack.extentreports.reporter.ConfigurableReporter;
+import com.aventstack.extentreports.observer.ExtentObserver;
+import com.aventstack.extentreports.reporter.ReporterConfigurable;
 import com.aventstack.extentreports.reporter.ExtentSparkReporter;
+import com.aventstack.extentreports.reporter.configuration.ViewName;
 import org.junit.jupiter.api.extension.*;
 
 import java.io.InputStream;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @ExtendWith(Junit5ExtentReportListener.class)
 public class Junit5ExtentReportListener implements TestWatcher, BeforeAllCallback, AfterAllCallback {
@@ -19,12 +23,12 @@ public class Junit5ExtentReportListener implements TestWatcher, BeforeAllCallbac
     private static Map<Class<?>, ExtentTest> executed = Collections.synchronizedMap(new HashMap<>());
 
     @Override
-    public void beforeAll(ExtensionContext context) throws Exception {
+    public void beforeAll(ExtensionContext context) {
         createReport();
     }
 
     @Override
-    public void afterAll(ExtensionContext context) throws Exception {
+    public void afterAll(ExtensionContext context) {
         if (!Objects.isNull(extent)) {
             extent.flush();
         }
@@ -98,14 +102,49 @@ public class Junit5ExtentReportListener implements TestWatcher, BeforeAllCallbac
     }
 
     private void initSpark(Properties properties) {
-        if (Objects.isNull(extent)){
+        if (Objects.isNull(extent)) {
             extent = new ExtentReports();
         }
         String outPath = getOutputPath(properties, "extent.reporter.spark.out");
-        if (Objects.isNull(spark)){
+        if (Objects.isNull(spark)) {
             spark = new ExtentSparkReporter(outPath);
         }
         attch(spark, properties, "extent.reporter.spark.config");
+        setOrder(properties, "extent.reporter.spark.viewConfigurer.viewOrder");
+        setOfflineMode(properties, "extent.reporter.spark.offlineMode");
+    }
+
+    private void setOfflineMode(Properties properties, String key) {
+        boolean out = true;
+        if (properties != null && properties.get(key) != null)
+            out = Boolean.parseBoolean((String) properties.get(key));
+        if (out) {
+            spark.config().setOfflineMode(out);
+        }
+    }
+
+    private void setOrder(Properties properties, String key) {
+        String out = "";
+        if (properties != null && properties.get(key) != null)
+            out = String.valueOf(properties.get(key));
+        if (!"".equals(out)) {
+            spark.viewConfigurer().viewOrder().as(orderConverter(out)).apply();
+        }
+    }
+
+    private List<ViewName> orderConverter(String order) {
+        String[] orders = order.split(",");
+        List<String> all = Stream.of(ViewName.AUTHOR, ViewName.CATEGORY, ViewName.EXCEPTION, ViewName.DASHBOARD, ViewName.DEVICE, ViewName.LOG, ViewName.TEST)
+                .map(ViewName::toString)
+                .map(String::toLowerCase)
+                .collect(Collectors.toList());
+        List<ViewName> matchOders = new ArrayList<>();
+        for (String i : orders) {
+            if (all.contains(i)) {
+                matchOders.add(ViewName.valueOf(i.toUpperCase()));
+            }
+        }
+        return matchOders;
     }
 
     private String getOutputPath(Properties properties, String key) {
@@ -118,7 +157,7 @@ public class Junit5ExtentReportListener implements TestWatcher, BeforeAllCallbac
         return out;
     }
 
-    private void attch(ConfigurableReporter r, Properties properties, String configKey) {
+    private void attch(ReporterConfigurable r, Properties properties, String configKey) {
         Object configPath = properties == null
                 ? System.getProperty(configKey)
                 : properties.get(configKey);
@@ -128,6 +167,6 @@ public class Junit5ExtentReportListener implements TestWatcher, BeforeAllCallbac
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        extent.attachReporter(r);
+        extent.attachReporter((ExtentObserver<?>) r);
     }
 }
